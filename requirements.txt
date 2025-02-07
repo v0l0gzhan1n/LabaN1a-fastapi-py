@@ -1,0 +1,5 @@
+fastapi[standard]
+sqlalchemy
+pymysql
+pydantic 
+bcrypt
