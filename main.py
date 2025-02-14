@@ -11,10 +11,30 @@ from passlib.context import CryptContext
 import jwt
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 # Создание объекта FastAPI
 app = FastAPI()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/", response_class=HTMLResponse)
+async def get_client():
+    with open("static/index.html", "r") as file:
+        return file.read()
 # Настройка базы данных MySQL
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://isp_r_Podolsky:12345@77.91.86.135/isp_r_Podolsky"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
@@ -45,7 +65,7 @@ class UserCreate(BaseModel):
     email: str
     full_name: str | None = None
     password: str
-    refresh_token: str
+    # refresh_token: str
 
 class UserRead(BaseModel):
     id: int
@@ -220,14 +240,27 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
+    refresh_token_expires = timedelta(days=7)  
+    refresh_token = create_access_token(
+        data={"sub": user.email}, expires_delta=refresh_token_expires
+    )
+    
+    try:
+        user.refresh_token = refresh_token
+        db.commit()
+        db.refresh(user)
+        
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Failed to update refresh token")
+    
     return {"access_token": access_token, "token_type": "bearer"}
-
-
 
 @app.put("/users/{user_id}", response_model=UserResponse)
 async def update_user(request: Request, token: Annotated[str, Depends(oauth2_scheme)], user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
@@ -255,26 +288,11 @@ async def update_user(request: Request, token: Annotated[str, Depends(oauth2_sch
 @app.post("/register/", response_model=UserResponse)
 def register_user(response: Response, user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = hash_password(user.password)
-    # Создание refresh token
-    refresh_token_expires = timedelta(days=7)  
-    refresh_token = create_access_token(
-        data={"sub": user.email}, expires_delta=refresh_token_expires
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True, 
-        samesite="lax",  
-        max_age=int(refresh_token_expires.total_seconds()),  
-        path="/",       
-    )
     db_user = User(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
         hashed_password=hashed_password,
-        refresh_token=refresh_token
     )
     try:
         db.add(db_user)
