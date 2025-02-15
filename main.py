@@ -25,11 +25,18 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
+<<<<<<< HEAD
     # allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_origins=["*"],
+=======
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+>>>>>>> 920fab1e03e0bfc8898548dedf8ddd8ed9e39b6e
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
