@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import bcrypt
 from passlib.context import CryptContext
 import jwt
+from typing import Optional
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,21 +23,16 @@ origins = [
     "https://localhost.tiangolo.com",
     "http://localhost",
     "http://localhost:8080",
+    "http://127.0.0.1:8000"
 ]
 app.add_middleware(
     CORSMiddleware,
-<<<<<<< HEAD
     # allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_origins=["*"],
-=======
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
->>>>>>> 920fab1e03e0bfc8898548dedf8ddd8ed9e39b6e
+    expose_headers=["access-control-allow-origin"],
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
@@ -80,7 +76,7 @@ class UserRead(BaseModel):
     username: str
     email: str
     full_name: str | None = None
-    refresh_token: str
+    refresh_token: Optional[str] = None
     disabled: bool
 
     class Config:
@@ -310,3 +306,7 @@ def register_user(response: Response, user: UserCreate, db: Session = Depends(ge
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Username or Email already registered")    
+
+@app.options("/{full_path:path}")
+async def preflight_request(full_path: str):
+    return Response(status_code=200)
