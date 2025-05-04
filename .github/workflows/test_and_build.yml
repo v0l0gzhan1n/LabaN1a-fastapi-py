@@ -24,7 +24,7 @@ jobs:
       - name: Create static directory
         run: mkdir -p app/static && touch app/static/index.html
       - name: Run tests
-        run: pytest test_prod.py -v
+        run: pytest app/test_prod.py -v
 
 
   build:
