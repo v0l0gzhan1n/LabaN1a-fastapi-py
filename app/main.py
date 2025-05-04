@@ -1,4 +1,4 @@
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.declarative import declarative_base
 from typing import Annotated
 from fastapi import FastAPI, HTTPException, Depends, status, Response, Request
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def get_client():
-    with open("static/index.html", "r") as file:
+    with open("static/index.html", "r", encoding="utf-8") as file:
         return file.read()
 # Настройка базы данных MySQL
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://isp_r_Podolsky:12345@77.91.86.135/isp_r_Podolsky"
