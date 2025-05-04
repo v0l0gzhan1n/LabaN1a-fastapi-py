@@ -7,7 +7,7 @@ WORKDIR /app
 
 
 # Копируем файлы с зависимостями в контейнер
-COPY requirements.txt .
+COPY ./requirements.txt .
 
 
 # Устанавливаем необходимые зависимости

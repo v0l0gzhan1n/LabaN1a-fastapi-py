@@ -1,4 +1,4 @@
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from typing import Annotated
 from fastapi import FastAPI, HTTPException, Depends, status, Response, Request
 from pydantic import BaseModel
